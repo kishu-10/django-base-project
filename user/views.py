@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.generics import (
     ListAPIView,
 )
-
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from helpers.viewsets import CustomModelViewSet
 
@@ -15,12 +15,21 @@ from .models import (
 )
 from .serializers import *
 from rest_framework import filters
+from rest_framework.response import Response
 
 User = get_user_model()
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class InitAPI(APIView):
+    def get(self, request, *args, **kwargs):
+        serializer = InitUserSerializer(
+            self.request.user, many=False, context={"request": request}
+        )
+        return Response(serializer.data)
 
 
 class MenuListView(ListAPIView):

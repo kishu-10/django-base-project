@@ -1,3 +1,8 @@
+from user.utils import (
+    get_role_menu_privileges,
+    get_menu_modules,
+    get_user_parent_menus,
+)
 from .models import (
     Privilege,
     Role,
@@ -8,8 +13,20 @@ from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from helpers.serializers import DynamicFieldsModelSerializer
 
 User = get_user_model()
+
+
+class AuthUserSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "mobile_number",
+        ]
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -73,3 +90,54 @@ class MenuSerializer(serializers.ModelSerializer):
     def get_privilege(self, obj):
         privileges = obj.privilege.all()
         return PrivilegeSerializer(privileges, many=True).data
+
+
+class InitMenuSerializer(serializers.ModelSerializer):
+    privilege = serializers.SerializerMethodField()
+    modules = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Menu
+        fields = [
+            "id",
+            "name",
+            "code",
+            "url",
+            "icon",
+            "privilege",
+            "modules",
+        ]
+
+    def get_modules(self, obj):
+        request = self.context.get("request")
+        modules = Menu.objects.filter(is_active=True, parent=obj).order_by("order_id")
+        if not request.user.is_superuser:
+            modules = get_menu_modules(request.user, obj)
+
+        serializer = InitMenuSerializer(
+            modules, many=True, context={"request": request}
+        )
+        return serializer.data
+
+    def get_privilege(self, obj):
+        request = self.context.get("request")
+        return get_role_menu_privileges(request.user, obj)
+
+
+class InitUserSerializer(serializers.ModelSerializer):
+    """serializer for listing user's all the menus"""
+
+    user = serializers.SerializerMethodField()
+    permissions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["user", "permissions"]
+
+    def get_user(self, obj):
+        return AuthUserSerializer(obj).data
+
+    def get_permissions(self, obj):
+        request = self.context.get("request")
+        menus = get_user_parent_menus(request.user)
+        return InitMenuSerializer(menus, many=True, context={"request": request}).data
