@@ -41,13 +41,21 @@ def check_general_permission(request, queryset):
     if request.user.is_superuser:
         return True
     elif request.method in ["PUT", "PATCH"]:
-        return queryset.filter(privilege__code="can_update", is_active=True).exists()
+        return queryset.filter(
+            privilege=Privilege.objects.get(code="can_update"), is_active=True
+        ).exists()
     elif request.method == "POST":
-        return queryset.filter(privilege__code="can_create", is_active=True).exists()
+        return queryset.filter(
+            privilege=Privilege.objects.get(code="can_create"), is_active=True
+        ).exists()
     elif request.method in SAFE_METHODS and request.user.is_authenticated:
-        return queryset.filter(privilege__code="can_read", is_active=True).exists()
+        return queryset.filter(
+            privilege=Privilege.objects.get(code="can_read"), is_active=True
+        ).exists()
     elif request.method == "DELETE":
-        return queryset.filter(privilege__code="can_delete", is_active=True).exists()
+        return queryset.filter(
+            privilege=Privilege.objects.get(code="can_delete"), is_active=True
+        ).exists()
     else:
         return False
 
