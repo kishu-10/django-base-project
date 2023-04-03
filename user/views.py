@@ -38,9 +38,9 @@ class MenuListView(ListAPIView):
     serializer_class = MenuSerializer
 
 
-class RoleViewSets(CustomModelViewSet):
+class RoleViewSet(CustomModelViewSet):
     serializer_class = RoleSerializer
-    queryset = Role.objects.all()
+    queryset = Role.objects.order_by("-id")
     filter_backends = [filters.SearchFilter]
     search_fields = ["name", "code"]
 
