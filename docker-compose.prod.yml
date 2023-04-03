@@ -1,0 +1,57 @@
+version: "3.7"
+
+services:
+  web:
+    container_name: django-base-backend
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    command: gunicorn django-base.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/home/app/web/static_cdn
+      - media_volume:/home/app/web/media
+    expose:
+      - 8000
+    env_file:
+      - /var/lib/jenkins/env/.env.prod
+    depends_on:
+      - db
+    networks:
+      - django-base
+
+  db:
+    container_name: django-base_db
+    restart: always
+    image: postgres:13.0-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432
+    env_file:
+      - /var/lib/jenkins/env/.env.prod.db
+    networks:
+      - django-base
+
+  nginx:
+    container_name: django-base-nginx
+    restart: always
+    build: ./nginx
+    volumes:
+      - static_volume:/home/app/web/static_cdn
+      - media_volume:/home/app/web/media
+    ports:
+      - 9000:80
+    depends_on:
+      - web
+    networks:
+      - django-base
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+networks:
+  django-base:
+    external: true

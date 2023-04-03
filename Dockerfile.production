@@ -1,0 +1,76 @@
+# Dockerfile for production
+
+###########
+# BUILDER #
+###########
+
+FROM python:3.10.6-slim as builder
+
+# set work directory
+WORKDIR /usr/src/app
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# install psycopg2 dependencies
+RUN apt-get update \
+    && apt-get install -y libpq-dev gcc
+
+# lint
+RUN pip install --upgrade pip
+
+# install dependencies
+COPY requirements .
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r production.txt
+#RUN pip wheel --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
+
+# remove build dependencies
+RUN apt-get autoremove -y gcc
+
+
+#########
+# FINAL #
+#########
+
+FROM python:3.10.6-slim
+
+RUN mkdir -p /home/app
+
+# create app user
+RUN groupadd --system app && useradd --system --gid app app
+
+# create appropriate directories
+ENV HOME=/home/app
+ENV APP_HOME=/home/app/web
+RUN mkdir $APP_HOME
+RUN mkdir $APP_HOME/static_cdn
+RUN mkdir $APP_HOME/media
+WORKDIR $APP_HOME
+
+# install dependencies
+# install psycopg2 dependencies
+RUN apt-get update \
+    && apt-get install -y libpangocairo-1.0-0 fonts-deva netcat libpq-dev gettext
+
+COPY --from=builder /usr/src/app/wheels /wheels
+COPY --from=builder /usr/src/app/base.txt /usr/src/app/production.txt ./
+#RUN pip install /wheels/*
+RUN pip install --no-cache /wheels/*
+
+# copy project files to app home directory
+COPY --chown=app:app . $APP_HOME
+RUN chown -R app:app $APP_HOME/static_cdn
+RUN chown -R app:app $APP_HOME/media
+RUN touch $APP_HOME/ocas.log
+RUN chown -R app:app $APP_HOME/ocas.log
+
+# copy entrypoint.prod.sh
+COPY ./entrypoint.sh $APP_HOME/
+RUN chmod +x ./entrypoint.sh
+
+# change user
+USER app
+
+# run entrypoint.sh
+ENTRYPOINT ["/home/app/web/entrypoint.sh"]

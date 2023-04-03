@@ -1,0 +1,28 @@
+version: "3.7"
+
+services:
+  web:
+    container_name: django-base
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/home/web
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  db:
+    container_name: django-base_db
+    image: postgres:13.0-alpine
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+
+volumes:
+  db_data:
