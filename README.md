@@ -23,8 +23,8 @@
       EMAIL_HOST=smtp.gmail.com
       EMAIL_USE_TLS=True
       EMAIL_PORT=587
-      EMAIL_HOST_USER=djangomail3000@gmail.com
-      EMAIL_HOST_PASSWORD=wkvyigknmyubpycd
+      EMAIL_HOST_USER=youremail@gmail.com
+      EMAIL_HOST_PASSWORD=yourpassword
       ```
 
     - For docker
@@ -50,8 +50,8 @@
       EMAIL_HOST=smtp.gmail.com
       EMAIL_USE_TLS=True
       EMAIL_PORT=587
-      EMAIL_HOST_USER=djangomail3000@gmail.com
-      EMAIL_HOST_PASSWORD=wkvyigknmyubpycd
+      EMAIL_HOST_USER=youremail@gmail.com
+      EMAIL_HOST_PASSWORD=yourpassword
       ```
 
 - Management Commands
